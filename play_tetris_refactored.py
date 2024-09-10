@@ -1,3 +1,19 @@
+
+#!/usr/bin/python
+
+"""
+Python implementation of text-mode version of the Tetris game
+
+Quick play instructions:
+
+ - a (return): move piece left
+ - d (return): move piece right
+ - w (return): rotate piece counter clockwise
+ - s (return): rotate piece clockwise
+ - e (return): just move the piece downwards as is
+ - q (return): quit game
+"""
+
 import os
 import random
 import sys
@@ -5,176 +21,120 @@ from copy import deepcopy
 
 # Constants
 BOARD_SIZE = 20
-EFF_BOARD_SIZE = BOARD_SIZE + 2
+EFF_BOARD_SIZE = BOARD_SIZE + 2  # Adding walls
+
+# Tetris pieces
 PIECES = [
-    [[1], [1], [1], [1]],
-    [[1, 0], [1, 0], [1, 1]],
-    [[0, 1], [0, 1], [1, 1]],
-    [[0, 1], [1, 1], [1, 0]],
-    [[1, 1], [1, 1]]
+    [[1], [1], [1], [1]],  # I
+    [[1, 0], [1, 0], [1, 1]],  # J
+    [[0, 1], [0, 1], [1, 1]],  # L
+    [[0, 1], [1, 1], [1, 0]],  # S
+    [[1, 1], [1, 1]]  # O
 ]
 
-MOVES = {
-    'LEFT': 'a',
-    'RIGHT': 'd',
-    'ROTATE_ANTICLOCKWISE': 'w',
-    'ROTATE_CLOCKWISE': 's',
-    'NO_MOVE': 'e',
-    'QUIT': 'q'
-}
-
+# User inputs
+MOVE_LEFT = 'a'
+MOVE_RIGHT = 'd'
+ROTATE_ANTICLOCKWISE = 'w'
+ROTATE_CLOCKWISE = 's'
+NO_MOVE = 'e'
+QUIT_GAME = 'q'
 
 def print_board(board, curr_piece, piece_pos, error_message=''):
-    """
-    Print the Tetris game board to the console.
-
-    Parameters:
-    - board: The game board matrix.
-    - curr_piece: The current active piece.
-    - piece_pos: The top-left position of the active piece on the board.
-    - error_message: Any error message to display.
-    """
     os.system('cls' if os.name == 'nt' else 'clear')
     print("Text mode version of the TETRIS game\n\n")
 
     board_copy = deepcopy(board)
-    curr_piece_size_x = len(curr_piece)
-    curr_piece_size_y = len(curr_piece[0])
-
-    for i in range(curr_piece_size_x):
-        for j in range(curr_piece_size_y):
+    for i in range(len(curr_piece)):
+        for j in range(len(curr_piece[0])):
             board_copy[piece_pos[0] + i][piece_pos[1] + j] |= curr_piece[i][j]
 
     for i in range(EFF_BOARD_SIZE):
         for j in range(EFF_BOARD_SIZE):
-            print("*" if board_copy[i][j] else " ", end='')
+            print("[]" if board_copy[i][j] == 1 else "  ", end="")
         print()
 
-    print(error_message)
-    print("\nInstructions: a-LEFT d-RIGHT w-ROTATE_ANTICW s-ROTATE_CW e-NO_MOVE q-QUIT")
+    if error_message:
+        print(f"\n{error_message}")
 
+    print("Instructions: a (left), d (right), w (rotate ccw), s (rotate cw), e (down, default), q (quit)\n")
 
-def initialize_board():
-    """
-    Initialize the game board with walls.
-
-    Returns:
-    - A matrix representing the initialized game board.
-    """
+def get_empty_board():
     board = [[0] * EFF_BOARD_SIZE for _ in range(EFF_BOARD_SIZE)]
-    
     for i in range(EFF_BOARD_SIZE):
-        board[0][i] = 1
-        board[EFF_BOARD_SIZE - 1][i] = 1
-        board[i][0] = 1
-        board[i][EFF_BOARD_SIZE - 1] = 1
-    
+        board[i][0] = board[i][EFF_BOARD_SIZE - 1] = 1  # Walls
+    for j in range(EFF_BOARD_SIZE):
+        board[EFF_BOARD_SIZE - 1][j] = 1  # Floor
     return board
 
+def get_random_piece():
+    return deepcopy(random.choice(PIECES))
 
-def check_collision(board, piece, pos):
-    """
-    Check if the piece collides with the board.
+def get_random_position(piece):
+    return [0, random.randint(1, BOARD_SIZE - len(piece[0]))]
 
-    Parameters:
-    - board: The game board matrix.
-    - piece: The current piece matrix.
-    - pos: The top-left position to check for collision.
-
-    Returns:
-    - True if there's a collision, False otherwise.
-    """
+def can_move(board, piece, pos, dx, dy):
     for i in range(len(piece)):
         for j in range(len(piece[0])):
-            if piece[i][j] and board[pos[0] + i][pos[1] + j]:
-                return True
-    return False
+            if piece[i][j] and board[pos[0] + i + dx][pos[1] + j + dy]:
+                return False
+    return True
 
-
-def clear_full_lines(board):
-    """
-    Remove complete lines from the board and return the new board.
-
-    Parameters:
-    - board: The game board matrix.
-
-    Returns:
-    - The new game board matrix after clearing full lines.
-    """
-    new_board = deepcopy(board)
-    
-    lines_to_clear = [i for i in range(1, EFF_BOARD_SIZE - 1) if all(new_board[i][j] for j in range(1, EFF_BOARD_SIZE - 1))]
-    
-    for line in lines_to_clear:
-        del new_board[line]
-        new_board.insert(1, [1] + [0] * (BOARD_SIZE) + [1])
-    
-    return new_board
-
+def apply_move(pos, dx, dy):
+    return [pos[0] + dx, pos[1] + dy]
 
 def rotate_piece(piece, clockwise=True):
-    """
-    Rotate the piece matrix.
+    return [[piece[j][i] for j in range(len(piece))] for i in range(len(piece[0]) - 1, -1, -1)] if clockwise         else [[piece[j][i] for j in range(len(piece) - 1, -1, -1)] for i in range(len(piece[0]))]
 
-    Parameters:
-    - piece: The current piece matrix.
-    - clockwise: Rotate clockwise if True, counter-clockwise otherwise.
+def merge_piece(board, piece, pos):
+    for i in range(len(piece)):
+        for j in range(len(piece[0])):
+            board[pos[0] + i][pos[1] + j] |= piece[i][j]
 
-    Returns:
-    - The rotated piece matrix.
-    """
-    if clockwise:
-        return [list(x)[::-1] for x in zip(*piece)]
-    return [list(x) for x in zip(*piece[::-1])][::-1]
-
-
-def main():
-    """
-    Main function to run the Tetris game.
-    """
-    board = initialize_board()
-    curr_piece = random.choice(PIECES)
-    piece_pos = [1, EFF_BOARD_SIZE // 2 - len(curr_piece[0]) // 2]
+def play_game():
+    board = get_empty_board()
+    curr_piece = get_random_piece()
+    piece_pos = get_random_position(curr_piece)
+    error_msg = ''
 
     while True:
-        error_message = ''
-        print_board(board, curr_piece, piece_pos)
-        move = input("Enter your move: ")
+        do_move_down = False
+        print_board(board, curr_piece, piece_pos, error_message=error_msg)
+        error_msg = ''
 
-        if move == MOVES['QUIT']:
-            print("Game Over!")
-            break
-
-        next_piece_pos = piece_pos[:]
-        next_piece = curr_piece
-        if move == MOVES['LEFT']:
-            next_piece_pos[1] -= 1
-        elif move == MOVES['RIGHT']:
-            next_piece_pos[1] += 1
-        elif move == MOVES['ROTATE_ANTICLOCKWISE']:
-            next_piece = rotate_piece(curr_piece, clockwise=False)
-        elif move == MOVES['ROTATE_CLOCKWISE']:
-            next_piece = rotate_piece(curr_piece, clockwise=True)
-        elif move == MOVES['NO_MOVE']:
-            next_piece_pos[0] += 1
+        player_move = input().strip().lower()
+        if player_move == MOVE_LEFT and can_move(board, curr_piece, piece_pos, 0, -1):
+            piece_pos = apply_move(piece_pos, 0, -1)
+            do_move_down = True
+        elif player_move == MOVE_RIGHT and can_move(board, curr_piece, piece_pos, 0, 1):
+            piece_pos = apply_move(piece_pos, 0, 1)
+            do_move_down = True
+        elif player_move == ROTATE_ANTICLOCKWISE and can_move(board, rotate_piece(curr_piece, False), piece_pos, 0, 0):
+            curr_piece = rotate_piece(curr_piece, False)
+            do_move_down = True
+        elif player_move == ROTATE_CLOCKWISE and can_move(board, rotate_piece(curr_piece, True), piece_pos, 0, 0):
+            curr_piece = rotate_piece(curr_piece, True)
+            do_move_down = True
+        elif player_move == NO_MOVE:
+            do_move_down = True
+        elif player_move == QUIT_GAME:
+            print("Bye. Thank you for playing!")
+            sys.exit(0)
         else:
-            error_message = "Invalid move!"
+            error_msg = "Invalid move!"
 
-        if not check_collision(board, next_piece, next_piece_pos):
-            curr_piece = next_piece
-            piece_pos = next_piece_pos
-        else:
-            if move == MOVES['NO_MOVE']:
-                for i in range(len(curr_piece)):
-                    for j in range(len(curr_piece[0])):
-                        board[piece_pos[0] + i][piece_pos[1] + j] |= curr_piece[i][j]
-                board = clear_full_lines(board)
-                curr_piece = random.choice(PIECES)
-                piece_pos = [1, EFF_BOARD_SIZE // 2 - len(curr_piece[0]) // 2]
-                if check_collision(board, curr_piece, piece_pos):
-                    print_board(board, curr_piece, piece_pos, "GAME OVER!")
-                    break
-        print_board(board, curr_piece, piece_pos, error_message)
+        if do_move_down and can_move(board, curr_piece, piece_pos, 1, 0):
+            piece_pos = apply_move(piece_pos, 1, 0)
+
+        if not can_move(board, curr_piece, piece_pos, 1, 0):
+            merge_piece(board, curr_piece, piece_pos)
+            curr_piece = get_random_piece()
+            piece_pos = get_random_position(curr_piece)
+
+            if not can_move(board, curr_piece, piece_pos, 0, 0):
+                break
+
+    print("GAME OVER!")
 
 if __name__ == "__main__":
-    main()
+    play_game()

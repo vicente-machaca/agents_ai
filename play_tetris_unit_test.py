@@ -1,47 +1,59 @@
+
 import unittest
 from copy import deepcopy
-from play_tetris_refactored import initialize_board, check_collision, clear_full_lines, rotate_piece, PIECES, EFF_BOARD_SIZE, BOARD_SIZE
-
+from play_tetris_refactored import (
+    get_empty_board,
+    get_random_piece,
+    get_random_position,
+    can_move,
+    apply_move,
+    rotate_piece
+)
 
 class TestTetris(unittest.TestCase):
 
-    def test_initialize_board(self):
-        board = initialize_board()
-        self.assertEqual(len(board), EFF_BOARD_SIZE)
-        self.assertEqual(len(board[0]), EFF_BOARD_SIZE)
-        for i in range(EFF_BOARD_SIZE):
-            self.assertEqual(board[0][i], 1)
-            self.assertEqual(board[EFF_BOARD_SIZE - 1][i], 1)
+    def test_get_empty_board(self):
+        board = get_empty_board()
+        self.assertEqual(len(board), 22)  # EFF_BOARD_SIZE = 20 + 2
+        self.assertEqual(len(board[0]), 22)
+        # Check that the walls and floor are correctly set
+        for i in range(len(board)):
             self.assertEqual(board[i][0], 1)
-            self.assertEqual(board[i][EFF_BOARD_SIZE - 1], 1)
-    
-    def test_check_collision(self):
-        board = initialize_board()
-        piece = PIECES[0]  # [[1], [1], [1], [1]]
+            self.assertEqual(board[i][-1], 1)
+        for j in range(len(board[0])):
+            self.assertEqual(board[-1][j], 1)
+
+    def test_get_random_piece(self):
+        piece = get_random_piece()
+        self.assertIn(piece, deepcopy(list({1, 2, 3, 4, 5})))
+
+    def test_get_random_position(self):
+        piece = [[1, 1], [1, 1]]
+        pos = get_random_position(piece)
+        self.assertEqual(pos[0], 0)
+        self.assertTrue(1 <= pos[1] < 20 - len(piece[0]) + 1)  # BOARD_SIZE - piece width + 1
+
+    def test_can_move(self):
+        board = get_empty_board()
+        piece = [[1, 1], [1, 1]]
         pos = [1, 1]
-        self.assertFalse(check_collision(board, piece, pos))
-        pos = [0, 0]
-        self.assertTrue(check_collision(board, piece, pos))
-    
-    def test_clear_full_lines(self):
-        board = initialize_board()
-        for i in range(1, EFF_BOARD_SIZE - 1):
-            board[i][1:BOARD_SIZE + 1] = [1] * BOARD_SIZE
-        new_board = clear_full_lines(board)
-        empty_line = [1] + [0] * BOARD_SIZE + [1]
-        for i in range(1, EFF_BOARD_SIZE - 1):
-            self.assertEqual(new_board[i], empty_line)
-    
+        self.assertTrue(can_move(board, piece, pos, 0, 1))  # Move right
+        self.assertTrue(can_move(board, piece, pos, 1, 0))  # Move down
+        self.assertFalse(can_move(board, piece, pos, 0, -1))  # Move left into wall
+        self.assertFalse(can_move(board, piece, [19, 1], 1, 0))  # Move down into floor
+
+    def test_apply_move(self):
+        pos = [5, 5]
+        new_pos = apply_move(pos, 1, -1)
+        self.assertEqual(new_pos, [6, 4])
+
     def test_rotate_piece(self):
-        piece = PIECES[1]  # [[1, 0], [1, 0], [1, 1]]
-        rotated_clockwise = rotate_piece(piece, clockwise=True)
-        expected_clockwise = [[1, 1, 1], [1, 0, 0]]
-        self.assertEqual(rotated_clockwise, expected_clockwise)
-        
-        rotated_counterclockwise = rotate_piece(piece, clockwise=False)
-        expected_counterclockwise = [[0, 0, 1], [1, 1, 1]]
-        self.assertEqual(rotated_counterclockwise, expected_counterclockwise)
+        piece = [[1, 0], [1, 1]]
+        rotated_piece = rotate_piece(piece, clockwise=True)
+        expected_piece = [[1, 1], [1, 0]]
+        self.assertEqual(rotated_piece, expected_piece)
+        rotated_piece_ccw = rotate_piece(expected_piece, clockwise=False)
+        self.assertEqual(rotated_piece_ccw, piece)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
