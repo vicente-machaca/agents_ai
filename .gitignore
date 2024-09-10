@@ -1,3 +1,4 @@
 .env
 output
 sample_refactored.js
+__pycache__/*
