@@ -1,3 +1,6 @@
 llm_sandbox/.env
 __pycache__/play_tetris_refactored.cpython-312.pyc
 open_interpreter/.env
+e2b/.env
+e2b/__pycache__/code_interpreter.cpython-311.pyc
+e2b/__pycache__/model.cpython-311.pyc
