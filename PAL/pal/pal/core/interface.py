@@ -170,6 +170,7 @@ class ProgramChatInterface(ProgramInterface):
         code = self.generate(prompt, temperature=temperature, top_p=top_p, max_tokens=max_tokens)
         with timeout(time_out):
             try:
+                print(code)
                 exec_result = self.execute(code)
             except Exception as e:
                 print(e)
