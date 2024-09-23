@@ -4,3 +4,4 @@ open_interpreter/.env
 e2b/.env
 e2b/__pycache__/code_interpreter.cpython-311.pyc
 e2b/__pycache__/model.cpython-311.pyc
+e2b/e2b.toml
