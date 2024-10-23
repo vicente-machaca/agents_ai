@@ -14,3 +14,16 @@ PAL/pal/build/pal/__pycache__
 e2b/histogram_from_sandbox.png
 e2b/histogram.png
 nemo-guardrails/*
+nemo/7_config_topical_rails/__pycache__/actions.cpython-311.pyc
+nemo/8_config_jailbreak/__pycache__/actions.cpython-39.pyc
+nemo/8_config_jailbreak/__pycache__/actions.cpython-311.pyc
+.gitignore
+nemo/7_config_topical_rails/rails/blocked_terms.co
+nemo/7_config_topical_rails/rails/disallowed_topics.co
+nemo/8_config_jailbreak/actions.py
+nemo/8_config_jailbreak/config.yml
+nemo/8_config_jailbreak/prompts.yml
+nemo/8_config_jailbreak/rails/blocked_terms.co
+nemo/8_config_jailbreak/rails/disallowed_topics.co
+nemo/config/config.yml
+nemo/config/rails.co

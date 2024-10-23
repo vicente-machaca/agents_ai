@@ -11,3 +11,6 @@ dependencies:
   - langchain==0.2.16
   - langchain-openai==0.1.23
   - llm-sandbox
+  - nemoguardrails==0.10.1
+  - torch==2.0.0
+  - transformers==4.45.2
